@@ -1,0 +1,29 @@
+# Local tooling and generated files
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.DS_Store
+work/
+logs/
+*.log
+*.zip
+*.bundle
+
+# Private deployment, credentials, mail and runtime data
+.env
+.env.*
+*.key
+*.pem
+*credentials*.json
+*service-account*.json
+*.eml
+*.mbox
+config/deployment.json
+config/telegram.json
+config/profile.private.json
+config/*private*.json
+config/icloud.json
+config/mail.json
+config/sources.private.json
+SETUP_STATUS.json

@@ -1,0 +1,36 @@
+{
+  "profile_version": "1",
+  "timezone": "Australia/Melbourne",
+  "summary_language": "zh-CN",
+  "channels": {
+    "Academic_AU": {
+      "country": "Australia",
+      "preferred_city": "Melbourne",
+      "topics": [
+        "probability",
+        "statistics",
+        "stochastic modelling"
+      ]
+    },
+    "Industry_MEL": {
+      "city": "Melbourne",
+      "topics": [
+        "data science",
+        "applied science",
+        "quantitative modelling"
+      ]
+    },
+    "Opportunity_Exploration": {
+      "enabled": false,
+      "daily_limit": 1
+    }
+  },
+  "verified_experience": [],
+  "learning_or_exposure": [],
+  "interests": [],
+  "work_authorization": "needs_confirmation",
+  "ordinary_daily_limit": 5,
+  "model_calls_per_run_limit": 10,
+  "model_calls_per_day_limit": 30,
+  "deep_analysis_enabled": false
+}

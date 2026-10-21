@@ -1,0 +1,16 @@
+**
+!.gcloudignore
+!Dockerfile
+!cloudbuild.yaml
+!requirements.txt
+!requirements.lock
+!radar/
+!radar/*.py
+!scripts/
+!scripts/check_sources.py
+!tests/
+!tests/*.py
+!config/
+!config/assessment.schema.json
+!config/profile.example.json
+!config/deployment.example.json

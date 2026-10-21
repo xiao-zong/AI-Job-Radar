@@ -1,0 +1,174 @@
+{
+  "type": "OBJECT",
+  "properties": {
+    "decision": {
+      "type": "STRING",
+      "enum": [
+        "review",
+        "pass"
+      ]
+    },
+    "priority": {
+      "type": "INTEGER"
+    },
+    "summary_zh": {
+      "type": "STRING"
+    },
+    "location": {
+      "type": "OBJECT",
+      "properties": {
+        "value": {
+          "type": "STRING"
+        },
+        "quote": {
+          "type": "STRING"
+        }
+      },
+      "required": [
+        "value",
+        "quote"
+      ]
+    },
+    "work_authorization": {
+      "type": "OBJECT",
+      "properties": {
+        "value": {
+          "type": "STRING"
+        },
+        "quote": {
+          "type": "STRING"
+        }
+      },
+      "required": [
+        "value",
+        "quote"
+      ]
+    },
+    "salary": {
+      "type": "OBJECT",
+      "properties": {
+        "value": {
+          "type": "STRING"
+        },
+        "quote": {
+          "type": "STRING"
+        }
+      },
+      "required": [
+        "value",
+        "quote"
+      ]
+    },
+    "remote": {
+      "type": "OBJECT",
+      "properties": {
+        "value": {
+          "type": "STRING"
+        },
+        "quote": {
+          "type": "STRING"
+        }
+      },
+      "required": [
+        "value",
+        "quote"
+      ]
+    },
+    "deadline": {
+      "type": "OBJECT",
+      "properties": {
+        "date": {
+          "type": "STRING",
+          "nullable": true
+        },
+        "timezone": {
+          "type": "STRING",
+          "nullable": true
+        },
+        "quote": {
+          "type": "STRING"
+        }
+      },
+      "required": [
+        "date",
+        "timezone",
+        "quote"
+      ]
+    },
+    "requirements": {
+      "type": "ARRAY",
+      "items": {
+        "type": "OBJECT",
+        "properties": {
+          "label": {
+            "type": "STRING"
+          },
+          "level": {
+            "type": "STRING",
+            "enum": [
+              "required",
+              "preferred"
+            ]
+          },
+          "quote": {
+            "type": "STRING"
+          },
+          "gap": {
+            "type": "BOOLEAN"
+          },
+          "candidate_evidence_ids": {
+            "type": "ARRAY",
+            "items": {
+              "type": "STRING"
+            }
+          }
+        },
+        "required": [
+          "label",
+          "level",
+          "quote",
+          "gap",
+          "candidate_evidence_ids"
+        ]
+      }
+    },
+    "transferable_skills": {
+      "type": "ARRAY",
+      "items": {
+        "type": "OBJECT",
+        "properties": {
+          "requirement_quote": {
+            "type": "STRING"
+          },
+          "candidate_evidence_id": {
+            "type": "STRING"
+          },
+          "explanation": {
+            "type": "STRING"
+          },
+          "limitation": {
+            "type": "STRING"
+          }
+        },
+        "required": [
+          "requirement_quote",
+          "candidate_evidence_id",
+          "explanation",
+          "limitation"
+        ]
+      }
+    }
+  },
+  "required": [
+    "decision",
+    "priority",
+    "summary_zh",
+    "location",
+    "work_authorization",
+    "salary",
+    "remote",
+    "deadline",
+    "requirements",
+    "transferable_skills"
+  ]
+}

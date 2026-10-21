@@ -1,0 +1,16 @@
+{
+  "project_id": "your-gcp-project-id",
+  "region": "australia-southeast1",
+  "model_location": "global",
+  "model_id": "gemini-3.8-flash",
+  "chat_id": null,
+  "stop_before_utc": "2027-01-15T00:00:00Z",
+  "activation_authorized": false,
+  "acceptance_authorized": false,
+  "credit_coverage_verified": false,
+  "cost_controls_verified": false,
+  "independent_monitoring_verified": false,
+  "source_samples_reviewed": false,
+  "telegram_test_verified": false,
+  "model_region_test_verified": false
+}

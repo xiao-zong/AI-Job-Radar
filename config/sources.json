@@ -1,0 +1,168 @@
+[
+  {
+    "id": "cultureamp",
+    "employer": "Culture Amp",
+    "channel": "Industry_MEL",
+    "kind": "greenhouse",
+    "url": "https://boards-api.greenhouse.io/v1/boards/cultureamp/jobs?content=true",
+    "official_entry": "https://www.cultureamp.com/company/careers",
+    "allowed_hosts": [
+      "boards-api.greenhouse.io",
+      "job-boards.greenhouse.io",
+      "boards.greenhouse.io"
+    ],
+    "enabled": true,
+    "validation_status": "approved",
+    "checked_on": "2026-10-20",
+    "observed_count": 31
+  },
+  {
+    "id": "mathjobs",
+    "employer": null,
+    "channel": "Academic_AU",
+    "kind": "mathjobs_rss",
+    "url": "https://www.mathjobs.org/jobs?joblist-0-0----rss--",
+    "official_entry": "https://www.mathjobs.org/jobs",
+    "allowed_hosts": [
+      "www.mathjobs.org",
+      "mathjobs.org"
+    ],
+    "enabled": true,
+    "validation_status": "approved",
+    "coverage_note": "Aggregate discovery feed. Does not establish all current Australian vacancies; verify job details and employer before enabling.",
+    "checked_on": "2026-10-20",
+    "observed_count": 316
+  },
+  {
+    "id": "austms",
+    "kind": "austms",
+    "url": "https://austms.org.au/resources/austms-careers/",
+    "allowed_hosts": [
+      "austms.org.au",
+      "www.unsw.edu.au",
+      "maths.anu.edu.au",
+      "jobs.anu.edu.au",
+      "qut.nga.net.au",
+      "study.uq.edu.au",
+      "unimelb.wd105.myworkdayjobs.com",
+      "careers.pageuppeople.com",
+      "www.flinders.edu.au"
+    ],
+    "quality": 2,
+    "channel": "Academic_AU",
+    "enabled": true,
+    "validation_status": "approved"
+  },
+  {
+    "id": "unimelb",
+    "kind": "workday",
+    "employer": "University of Melbourne",
+    "url": "https://unimelb.wd105.myworkdayjobs.com/en-US/UoM_External_Career",
+    "api_base": "https://unimelb.wd105.myworkdayjobs.com/wday/cxs/unimelb/UoM_External_Career",
+    "allowed_hosts": [
+      "unimelb.wd105.myworkdayjobs.com"
+    ],
+    "quality": 3,
+    "channel": "Academic_AU",
+    "enabled": true,
+    "validation_status": "approved"
+  },
+  {
+    "id": "rmit",
+    "kind": "workday",
+    "employer": "RMIT University",
+    "url": "https://rmit.wd3.myworkdayjobs.com/RMIT_Careers",
+    "api_base": "https://rmit.wd3.myworkdayjobs.com/wday/cxs/rmit/RMIT_Careers",
+    "allowed_hosts": [
+      "rmit.wd3.myworkdayjobs.com"
+    ],
+    "quality": 3,
+    "channel": "Academic_AU",
+    "enabled": true,
+    "validation_status": "approved"
+  },
+  {
+    "id": "monash",
+    "kind": "pageup",
+    "employer": "Monash University",
+    "url": "https://careers.pageuppeople.com/513/cw/en/listing",
+    "allowed_hosts": [
+      "careers.pageuppeople.com"
+    ],
+    "quality": 3,
+    "channel": "Academic_AU",
+    "enabled": true,
+    "validation_status": "approved"
+  },
+  {
+    "id": "latrobe",
+    "kind": "pageup",
+    "employer": "La Trobe University",
+    "url": "https://jobs.latrobe.edu.au/en/listing/",
+    "allowed_hosts": [
+      "jobs.latrobe.edu.au"
+    ],
+    "quality": 3,
+    "channel": "Academic_AU",
+    "enabled": false,
+    "validation_status": "blocked_access_challenge"
+  },
+  {
+    "id": "deakin",
+    "kind": "pageup",
+    "employer": "Deakin University",
+    "url": "https://careers.deakin.edu.au/en/listing/",
+    "allowed_hosts": [
+      "careers.deakin.edu.au"
+    ],
+    "quality": 3,
+    "channel": "Academic_AU",
+    "enabled": false,
+    "validation_status": "blocked_access_challenge"
+  },
+  {
+    "id": "the_australia",
+    "kind": "the",
+    "url": "https://www.timeshighereducation.com/unijobs/listings/australia/",
+    "allowed_hosts": [
+      "www.timeshighereducation.com"
+    ],
+    "quality": 1,
+    "channel": "Academic_AU",
+    "enabled": true,
+    "validation_status": "approved"
+  },
+  {
+    "id": "seek_email",
+    "channel": "Industry_MEL",
+    "kind": "icloud_alert",
+    "enabled": false,
+    "validation_status": "pending_configuration",
+    "folder": "AI Job Radar",
+    "allowed_hosts": [
+      "www.seek.com.au",
+      "seek.com.au",
+      "au.seek.com",
+      "email.s.seek.com.au"
+    ],
+    "quality": 1,
+    "not_before": 0,
+    "description": "Optional official job-alert intake. Configure private credentials, set not_before to the approved activation Unix timestamp, validate, then enable."
+  },
+  {
+    "id": "linkedin_email",
+    "channel": "Industry_MEL",
+    "kind": "icloud_alert",
+    "enabled": false,
+    "validation_status": "pending_configuration",
+    "folder": "AI Job Radar",
+    "allowed_hosts": [
+      "www.linkedin.com",
+      "linkedin.com",
+      "au.linkedin.com"
+    ],
+    "quality": 1,
+    "not_before": 0,
+    "description": "Optional official job-alert intake. Configure private credentials, set not_before to the approved activation Unix timestamp, validate, then enable."
+  }
+]

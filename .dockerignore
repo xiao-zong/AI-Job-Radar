@@ -1,0 +1,10 @@
+**
+!requirements.txt
+!requirements.lock
+!radar/
+!radar/**
+!scripts/
+!scripts/check_sources.py
+!config/
+!config/assessment.schema.json
+!Dockerfile

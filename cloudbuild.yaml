@@ -1,0 +1,12 @@
+# Only use after billing/cost review and with a separate build service account.
+# Supply _IMAGE as the exact Artifact Registry image tag for the source commit.
+steps:
+  - name: python@sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1
+    entrypoint: python
+    args: ['-m', 'unittest', 'discover', '-s', 'tests', '-v']
+  - name: gcr.io/cloud-builders/docker
+    args: ['build', '-t', '${_IMAGE}', '.']
+images: ['${_IMAGE}']
+options:
+  logging: CLOUD_LOGGING_ONLY
+timeout: 600s
