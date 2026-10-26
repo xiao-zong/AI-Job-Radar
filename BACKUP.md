@@ -1,12 +1,14 @@
 # Public backup record
 
-Snapshot prepared on 22 October 2026 (Australia/Melbourne) from cloud source commit `c8d3fdc3f6d3462232050dc1aeb9e5811119053b`. The included runtime corresponds to the provider-recovery source release `5cb3d5537af6`.
+The original snapshot was prepared on 22 October 2026 (Australia/Melbourne) from cloud source commit `c8d3fdc3f6d3462232050dc1aeb9e5811119053b`, with runtime release `5cb3d5537af6`.
+
+The 26 October 2026 incremental backup includes runtime repair revision `4d94daa78a35`. It adds persistent sanitized mail-card caching, resumable resolver allowance and a distinction between operational warnings and real failures. Only eight changed runtime/test files were copied into the existing sanitized public tree; configuration placeholders and infrastructure scripts remain unchanged. Documentation and content checksums were updated separately. This entry records the backed-up code and does not assert a successful deployment or live validation.
 
 The downloaded Git archive was verified against SHA-256 `ab037ab8d811f5c7830eb14b8d7d8715fcd4373ae0a66b58eef513883918142c` before preparation. It contained 47 tracked files. The public copy uses fresh Git history; it does not publish the private cloud repository's history.
 
 ## Included and adapted
 
-- All runtime modules, all eight setup/maintenance scripts, all ten test files, the assessment schema, container recipe, build recipe and locked dependencies.
+- All runtime modules, all eight setup/maintenance scripts, all twelve test files, the assessment schema, container recipe, build recipe and locked dependencies.
 - Cloud project, project number, bucket references and Telegram bot username replaced by generic placeholders, including the acceptance-test fixtures.
 - Public-source configuration retained; the two mail-source templates added from the deployed source schema with credentials omitted and activation disabled.
 - Profile example aligned to the recorded 10/run, 30/day limits; candidate experience and work authorization remain unconfirmed examples.
@@ -21,9 +23,9 @@ This is a source backup with generic configuration templates, not a complete pri
 
 ## Validation record
 
-All 102 offline tests passed on 22 October 2026 after the public snapshot's placeholder/template edits (Python 3.15). The test suite covers parsing, deduplication, evidence checks, quotas, provider backoff/cooldown and Telegram delivery reconciliation. No cloud, mailbox, model or Telegram calls are needed for the unit tests.
+All 122 offline tests passed on 26 October 2026 after the public snapshot's incremental code and placeholder/template checks (Python 3.15.1). The test suite covers parsing, deduplication, evidence checks, quotas, provider backoff/cooldown, persistent mail-card reuse, resumable coverage, operational warning classification, outage escalation and Telegram delivery reconciliation. No cloud, mailbox, model or Telegram calls are needed for the unit tests.
 
-On 21 October the recorded deployment validation checked source ingestion and queued failures without a new model call because the daily allowance was exhausted. This snapshot does not assert a later live model recovery or current source availability.
+The original 21 October deployment validation checked source ingestion and queued failures without a new model call because the daily allowance was exhausted. The 26 October record above covers code and offline validation only; consult the private deployment record for subsequent live acceptance results.
 
 ## Updating this backup
 

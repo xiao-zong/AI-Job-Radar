@@ -65,7 +65,8 @@ def main():
                         Telegram(os.environ["TELEGRAM_BOT_TOKEN"]), config["chat_id"], profile,
                         soft_seconds=min(450, remaining - 30))
         summary, code = engine.run(sources, fetch)
-        print(json.dumps({"severity": "ERROR" if code else "INFO", "event": "radar_run", **summary}))
+        severity = "ERROR" if code else "WARNING" if summary.get("warnings") else "INFO"
+        print(json.dumps({"severity": severity, "event": "radar_run", **summary}))
         return code
     except Exception as error:
         print(json.dumps({"severity": "ERROR", "event": "radar_failed", "error_type": type(error).__name__}))

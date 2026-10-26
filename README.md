@@ -42,6 +42,12 @@ Transient model failures permit one short backoff retry per job per run. Continu
 
 Fenced leases, atomic quota reservations, cross-source identity checks and a persistent outbox protect against overlapping runs and repeated recommendations. Source failures remain visible. Firestore scans have a 2,500-record safety bound.
 
+The 26 October 2026 repair adds a private Firestore cache of sanitized parsed mail cards. Repeated polls reuse cards with their original receipt timestamps, so old messages no longer consume the redirect allowance repeatedly. Remaining messages resume on a later scan when the 80-request/45-second resolver allowance is reached; valid messages are retained and coverage warnings remain visible. Raw mail, recipient addresses and tracking URLs are excluded from the cache.
+
+Safely withheld evidence-check rejections, a deliberate model cooldown, 72 hours without a new matching email, and isolated retryable AI failures are warnings. Warning-only runs retain a successful heartbeat and log `WARNING`; their health report is deduplicated daily in Telegram. A retryable provider outage escalates to a failure after 24 hours without a successful validated assessment (or from its first recorded failure if no success exists). Nonretryable provider errors, actual source/storage/delivery failures, malformed model responses and unexpected runtime errors remain failures.
+
+The cloud failure monitor uses a forward-only error counter and a metric incident with a 25-hour grouping window. Only incident-opening email is enabled; repeated and closure emails are disabled. The former repeating log-match policy is retained disabled. Independent missing-success monitoring remains active.
+
 ## Repository contents
 
 | Path | Purpose |
@@ -63,10 +69,10 @@ Use Python 3.12 or later:
 python3 -m unittest discover -s tests -v
 ```
 
-The unit suite uses mocks and an in-memory store; it does not need cloud, mailbox or Telegram credentials. The current snapshot has 102 tests. Runtime dependencies in `requirements.lock` were locked for the pinned Linux container; those wheel hashes are not a portable macOS dependency lock.
+The unit suite uses mocks and an in-memory store; it does not need cloud, mailbox or Telegram credentials. The current snapshot has 122 tests. Runtime dependencies in `requirements.lock` were locked for the pinned Linux container; those wheel hashes are not a portable macOS dependency lock.
 
 ## Restoring the service
 
 Read [DEPLOYMENT.md](DEPLOYMENT.md) before provisioning or deploying. Deployment identifiers in helper scripts are deliberately replaced by `your-gcp-project-id`, `123456789012` and `YourAIJobRadarBot`. These must be reviewed and configured together. Example authorization flags are false, the Telegram destination is unset, and the candidate profile contains no verified personal experience.
 
-This public snapshot does not contain the private configuration or Firestore state required for exact service restoration. Those remain in the existing private cloud environment and private backups. The latest backed-up runtime includes the 21 October 2026 provider-throttling repair; the backup itself is not evidence that a later live AI call succeeded.
+This public snapshot does not contain the private configuration or Firestore state required for exact service restoration. Those remain in the existing private cloud environment and private backups. The backed-up code includes the 21 October provider-throttling repair and the 26 October 2026 mail-cache and operational-warning repair. The latter source revision is `4d94daa78a35`; inclusion in this backup does not assert deployment or live verification.

@@ -1,6 +1,8 @@
 """Official alert cards only: bounded redirects, no authenticated job-site scrape."""
 from email import policy
 from email.parser import BytesParser
+from copy import deepcopy
+import hashlib
 import html
 import os
 import re
@@ -22,6 +24,19 @@ DIRECT_HOSTS = {
 FOOTER = re.compile(
     r"unsubscribe|manage (?:your )?(?:job )?alerts|privacy policy|"
     r"this email was intended|you are receiving|you received this email", re.I)
+CACHE_VERSION = "mail_cards_v2"
+
+
+class ResolutionDeferred(MailAccessError):
+    """The bounded resolver is full; unparsed mail can wait for the next scan."""
+
+
+class MailItems(list):
+    """Jobs plus safe coverage metadata; raw messages are never persisted."""
+    def __init__(self, jobs, warnings=(), last_received=0):
+        super().__init__(jobs)
+        self.health_warnings = sorted(set(warnings))
+        self.last_alert_received_at = last_received
 
 
 def direct_job(url, source_id):
@@ -67,7 +82,7 @@ class Resolver:
                 return None
             left = self.end - time.monotonic()
             if left < 2 or self.requests >= 80:
-                raise MailAccessError("Alert link resolution allowance exceeded.")
+                raise ResolutionDeferred("Alert link resolution allowance exceeded.")
             self.requests += 1
             try:
                 response = self.opener.open(
@@ -188,17 +203,50 @@ def parse_alert(raw, source, received_at, resolver=None):
     return list(items.values())
 
 
-def fetch_icloud(source):
+def fetch_icloud(source, *, cache=None, reader=None, resolver=None):
     path = os.environ.get("RADAR_ICLOUD_FILE")
-    if not path:
+    if reader is None and not path:
         raise MailAccessError("iCloud credential mount is missing.")
-    reader = ICloudReader(path)
+    reader = reader or ICloudReader(path)
     messages = reader.messages(source["id"], source["folder"], source["not_before"])
-    resolver = Resolver()
-    items = {}
+    if messages and cache is None:
+        from .store import FirestoreStore
+        # ADC resolves the current project's identity; no new credentials or IAM
+        # grants. Cache only parsed cards, never raw mail, recipient or tracking URLs.
+        cache = FirestoreStore(None)
+    resolver = resolver or Resolver()
+    items, warnings = {}, set()
+    latest = max((m["received_at"] for m in messages), default=0)
     for message in messages:
-        for item in parse_alert(message["raw"], source, message["received_at"], resolver):
+        raw_hash = hashlib.sha256(message["raw"]).hexdigest()
+        identity = digest([CACHE_VERSION, source["id"], raw_hash, message["received_at"]])
+        path = "mail_cache/" + identity
+        previous = cache.get(path)
+        if (previous and previous.get("version") == CACHE_VERSION
+                and previous.get("source") == source["id"]
+                and previous.get("raw_hash") == raw_hash
+                and previous.get("received_at") == message["received_at"]
+                and isinstance(previous.get("jobs"), list) and previous["jobs"]):
+            parsed = deepcopy(previous["jobs"])
+        else:
+            try:
+                parsed = parse_alert(message["raw"], source, message["received_at"], resolver)
+            except ResolutionDeferred:
+                warnings.add("mail_resolution_deferred")
+                break
+            except MailAccessError:
+                # One unsupported message must not discard other valid mail.
+                # With zero parsed jobs below, this remains a real source error.
+                warnings.add("mail_message_requires_review")
+                continue
+            value = {"version": CACHE_VERSION, "source": source["id"],
+                     "raw_hash": raw_hash, "received_at": message["received_at"],
+                     "jobs": deepcopy(parsed)}
+            cache.atomic([path], lambda data, p=path, v=value: data.update({p: v}))
+        for item in parsed:
             # Newest message wins; older repeated recommendations cannot
             # refresh timestamps or replace its newer evidence.
             items.setdefault(item["id"], item)
-    return list(items.values()), False
+    if messages and not items:
+        raise MailAccessError("No alert messages could be parsed within the reviewed allowance.")
+    return MailItems(list(items.values()), warnings, latest), False

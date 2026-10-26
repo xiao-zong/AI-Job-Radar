@@ -152,7 +152,7 @@ class AlertTests(unittest.TestCase):
             reader.return_value.messages.return_value = [
                 {"raw": raw_mail(), "received_at": RECEIVED},
                 {"raw": raw_mail(), "received_at": RECEIVED - 50}]
-            jobs, complete = fetch_icloud(source)
+            jobs, complete = fetch_icloud(source, cache=MemoryStore())
         self.assertEqual(len(jobs), 2)
         self.assertFalse(complete)
         self.assertTrue(all(j["evidence_received_at"] == RECEIVED for j in jobs))
@@ -165,8 +165,9 @@ class AlertTests(unittest.TestCase):
         engine = Engine(store, Model(), Sender(), -1001, profile,
                         now=lambda: RECEIVED + 73 * 3600)
         summary, code = engine.run([source], lambda _: ([], False))
-        self.assertEqual(code, 1)
-        self.assertIn("mail_not_received_72h:linkedin_email", summary["errors"])
+        self.assertEqual(code, 0)
+        self.assertIn("mail_not_received_72h:linkedin_email", summary["warnings"])
+        self.assertEqual(summary["errors"], [])
         self.assertTrue(store.get("sources/linkedin_email")["first_alert_pending"])
 
     def test_mail_only_prompt_does_not_change_public_job_prompt(self):

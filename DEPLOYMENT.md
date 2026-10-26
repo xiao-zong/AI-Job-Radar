@@ -22,7 +22,7 @@ Identifiers also appear in `radar/acceptance.py`, `radar/shutdown.py`, `scripts/
 ## Runtime resources
 
 - Cloud Run Job `ai-job-radar`: one task, parallelism one, 1 vCPU, 512 MiB, 600-second timeout and zero automatic retries. The application stops within 480 seconds and has a shorter soft work deadline.
-- Firestore Standard / Native in the selected region for jobs, source health, analyses, notifications, counters, leases and heartbeat. Large bodies, assessments and notification text should be exempted from indexing.
+- Firestore Standard / Native in the selected region for jobs, source health, analyses, notifications, counters, leases, heartbeat and sanitized parsed-mail cache. Large bodies, assessments, notification text and parsed-card arrays should be exempted from indexing.
 - Artifact Registry for immutable container images; Cloud Build uses a separate identity and the pinned base image/dependency lock.
 - Secret Manager holds fixed versions of `radar-deployment`, `radar-profile`, `radar-sources`, `radar-telegram-token`, and optionally `radar-mail-icloud`.
 - Cloud Scheduler `radar-daily`: `0 8,14,20 * * *`, timezone `Australia/Melbourne`, invoking the Cloud Run Jobs API with OAuth.
@@ -65,7 +65,9 @@ The original stop design pauses `radar-daily` and `radar-credit-stop` on 14 Janu
 
 The reader connects with TLS to iCloud and opens only the dedicated `AI Job Radar` folder in read-only mode (`EXAMINE` / `BODY.PEEK`). It implements no SMTP or destructive mailbox commands. Apple app-specific passwords themselves grant broader mailbox access; the application enforces the folder restriction.
 
-Server rules can move and mark as read alerts from `jobalerts-noreply@linkedin.com` and `jobmail@s.seek.com.au`. The adapters validate supported senders/templates, remove recipient addresses and tracking parameters, and use bounded excerpts. Missing templates fail visibly. No new alert for 72 hours becomes a source-health error. Messages must be after activation and within seven days; analysis/delivery evidence must remain within 48 hours.
+Server rules can move and mark as read alerts from `jobalerts-noreply@linkedin.com` and `jobmail@s.seek.com.au`. The adapters validate supported senders/templates, remove recipient addresses and tracking parameters, and use bounded excerpts. Messages must be after activation and within seven days; analysis/delivery evidence must remain within 48 hours. A successful mailbox read with no new matching alert for 72 hours produces a coverage warning, rather than an execution failure.
+
+`mail_cache` stores sanitized parsed cards keyed by parser version, source, raw-message hash and original receipt timestamp. It stores neither raw mail nor recipient/tracking data. Runtime uses the existing Firestore permissions and ADC-selected project; verify the selected project and persisted cache reads during acceptance. Cache hits preserve the original evidence timestamp and do not refresh expired cards. Resolver limits remain 80 HTTP requests and 45 seconds; remaining messages defer until a later scan. A bad message does not discard other valid cards, but partial coverage is recorded as a warning. All-unparsed messages, actual mailbox failures and cache storage failures still fail the source. Include this private cache in retention/backup reviews; it is not part of the public repository.
 
 Generate mailbox credentials through the account owner's own authentication flow, enter them at the hidden prompt in `scripts/configure_icloud_mail.py`, and pin the stored secret version. `python3 -m scripts.check_icloud_mail` is a manual read audit; it does not call AI or send Telegram messages. Keep its output private because it may contain selected job information.
 
@@ -79,13 +81,23 @@ gcloud scheduler jobs pause radar-daily   --location=australia-southeast1 --proj
 
 A pause does not cancel an active execution. Resume with the corresponding `resume` command only after checking active jobs, allowance and stop date. A manual Scheduler `run` still uses the normal quotas.
 
-Inspect completed Cloud Run executions, structured `radar_run` logs, Firestore run/source/job/notification records and `control/heartbeat`. An overlap exits as `skipped_overlap`; partial source/model/delivery failures remain failures. Never reset counters simply to repeat paid calls.
+Inspect completed Cloud Run executions, structured `radar_run` logs, Firestore run/source/job/notification records and `control/heartbeat`. An overlap exits as `skipped_overlap`. Warning-only runs retain `status="success"`, update the heartbeat and log `WARNING`; actual failures retain `partial_failure`, nonzero exit status and `ERROR`. The summary includes separate `warnings` and `errors` lists. Daily Telegram health reports include warning counts without generating a new report for each scan. Never reset counters simply to repeat paid calls.
 
-Transient provider errors allow one short backoff retry; each attempt reserves quota independently. Continued errors stop AI requests for the run and persist a 15/30/60/120-minute cooldown. A non-retryable provider error uses a longer cooldown. A `Retry-After` above five seconds defers to a later run. Four provider failures on the same unchanged job require review. Validation failures have a separate two-attempt policy and retain private diagnostic evidence. Safe error codes exclude raw provider response bodies.
+ValueError evidence-check rejections remain withheld and retry at most under the existing evidence-validation policy; they are warnings. Malformed JSON, runtime errors and unexpected exceptions remain errors. Successful mailbox silence and deliberate cooldown are warnings; an actual source-fetch, storage or Telegram delivery error remains an operational failure.
+
+Transient provider errors allow one short backoff retry; each attempt reserves quota independently. Continued errors stop AI requests for the run and persist a 15/30/60/120-minute cooldown. A non-retryable provider error uses a longer cooldown and fails immediately. A `Retry-After` above five seconds defers to a later run. Four provider failures on the same unchanged job require review. Validation failures have a separate two-attempt policy and retain private diagnostic evidence. Safe error codes exclude raw provider response bodies.
+
+`control/model_service.last_success` records each actual validated AI assessment immediately, including when another request later fails in that run. A success clears the outage's `first_failure` anchor. Retryable failures are warnings while an actual successful assessment is less than 24 hours old; absent such a success, they escalate after 24 hours from the first recorded failure. If the last actual success is already 24 hours old, a new provider failure escalates immediately. For an older deployment migration, derive the latest actual success from stored `jobs.assessed_at`, rather than treating a completed scan as an AI success.
+
+The 26 October 2026 repair code is source revision `4d94daa78a35` and has 122 passing offline tests. This public code-backup record does not assert that the repair has been deployed or live-verified.
 
 For an unknown Telegram outcome, inspect the private channel and event identifier first. `scripts/reconcile_delivery.py` obtains the run lease and records a verified resolution; it never sends a message itself. Do not automatically resend an uncertain delivery.
 
 Rollback by redeploying the previously accepted immutable image and compatible pinned secret versions from private deployment records. Keep Firestore state and daily quotas intact. Public-source retries do not bypass access challenges, TLS validation or redirect restrictions. Keep failure monitoring active while diagnosing a fault.
+
+## Failure-email configuration
+
+The 26 October deployment replaces the repeating log-match failure policy with the `radar_actionable_failure` log-based counter. Its filter selects `severity>=ERROR` on the radar, acceptance and stop Cloud Run jobs. A metric-threshold condition sums this forward-only counter over 90,000 seconds (25 hours), groups by job name, and opens an incident above zero. The alert strategy uses `notificationPrompts=["OPENED"]` and has no `notificationChannelStrategy` / renotify interval. ERROR severity is set explicitly. Keep the former hourly log policy disabled after validating its replacement; retain independent missing-success monitoring. This groups daily repeats of one continuing fault rather than emailing for each matching log.
 
 ## Private backup responsibilities
 

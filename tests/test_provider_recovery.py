@@ -36,11 +36,12 @@ class ProviderRecoveryTests(unittest.TestCase):
         self.assertEqual(self.f.model.analyze.call_count, 2)
         self.assertEqual(len(self.f.ordinary()), 1)
 
-    def test_two_service_failures_stop_other_calls_but_keep_alert_and_queue(self):
+    def test_two_transient_failures_stop_other_calls_but_keep_warning_and_queue(self):
         self.provider([ModelServiceError('http_429', True, 429)] * 2)
         result, code = self.f.run_items(self.f.items[:3])
-        self.assertEqual(code, 1)
-        self.assertIn('model_service_failed:http_429', result['errors'])
+        self.assertEqual(code, 0)
+        self.assertIn('model_service_failed:http_429', result['warnings'])
+        self.assertEqual(result['errors'], [])
         self.assertEqual(self.f.model.analyze.call_count, 2)
         self.assertEqual(self.quota(), 2)
         self.assertEqual(len(self.f.ordinary()), 0)
@@ -50,7 +51,7 @@ class ProviderRecoveryTests(unittest.TestCase):
         self.f.profile['model_calls_per_day_limit'] = 1
         self.provider([ModelServiceError('http_429', True, 429), self.success()])
         result, code = self.f.run_items(self.f.items[:2])
-        self.assertEqual(code, 1)
+        self.assertEqual(code, 0)
         self.assertEqual(self.quota(), 1)
         self.assertEqual(self.f.model.analyze.call_count, 1)
 
@@ -58,7 +59,7 @@ class ProviderRecoveryTests(unittest.TestCase):
         self.f.profile['model_calls_per_run_limit'] = 1
         self.provider([ModelServiceError('transport_ReadTimeout', True), self.success()])
         _, code = self.f.run_items(self.f.items[:2])
-        self.assertEqual(code, 1)
+        self.assertEqual(code, 0)
         self.assertEqual(self.quota(), 1)
         self.assertEqual(self.f.model.analyze.call_count, 1)
         self.sleep.assert_not_called()
@@ -67,7 +68,7 @@ class ProviderRecoveryTests(unittest.TestCase):
         self.provider([ModelServiceError('http_503', True, 503)] * 2 + [self.success()])
         self.f.run_items(self.f.items[:1])
         _, code = self.f.run_items(self.f.items[:1])
-        self.assertEqual(code, 1)
+        self.assertEqual(code, 0)
         self.assertEqual(self.f.model.analyze.call_count, 2)
         self.f.timestamp += 3600
         _, code = self.f.run_items(self.f.items[:1])
@@ -82,7 +83,7 @@ class ProviderRecoveryTests(unittest.TestCase):
         self.f.run_items(self.f.items[:1])
         self.f.timestamp += 3600
         _, code = self.f.run_items(self.f.items[:1])
-        self.assertEqual(code, 1)
+        self.assertEqual(code, 0)
         job = self.f.store.get('jobs/' + self.f.items[0]['id'])
         self.assertEqual((job['attempts'], job['service_failures'], job['state']), (4, 4, 'review_required'))
 
@@ -97,7 +98,7 @@ class ProviderRecoveryTests(unittest.TestCase):
     def test_long_retry_after_defers_without_sleeping(self):
         self.provider([ModelServiceError('http_429', True, 429, retry_after=120)])
         _, code = self.f.run_items(self.f.items[:1])
-        self.assertEqual(code, 1)
+        self.assertEqual(code, 0)
         self.assertEqual(self.quota(), 1)
         self.sleep.assert_not_called()
 
@@ -106,8 +107,8 @@ class ProviderRecoveryTests(unittest.TestCase):
         value['requirements'][0]['quote'] = 'Invented experience that is not present.'
         self.provider([ModelServiceError('http_429', True, 429), (value, usage)])
         result, code = self.f.run_items(self.f.items[:1])
-        self.assertEqual(code, 1)
-        self.assertTrue(any(e.startswith('assessment_failed:') for e in result['errors']))
+        self.assertEqual(code, 0)
+        self.assertTrue(any(e.startswith('assessment_failed:') for e in result['warnings']))
         self.assertEqual(len(self.f.ordinary()), 0)
         self.assertEqual(self.quota(), 2)
 

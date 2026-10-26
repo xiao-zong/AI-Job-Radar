@@ -33,7 +33,7 @@ class Engine:
         self.stop = monotonic() + soft_seconds
         self.owner = uuid.uuid4().hex
         self.generation = None
-        self.calls, self.errors = 0, []
+        self.calls, self.errors, self.warnings = 0, [], []
         self.jobs = {}
 
     def time_left(self, margin=0):
@@ -122,14 +122,21 @@ class Engine:
         source_state = {"initialized": True, "last_success": self.now(),
                         "count": len(items), "status": "ok",
                         "complete_inventory": complete_inventory}
+        source_warnings = list(dict.fromkeys(getattr(items, "health_warnings", [])))
+        if source_warnings:
+            source_state.update(status="partial", warnings=source_warnings)
+            self.warnings.extend("source_warning:" + source["id"] + ":" + code for code in source_warnings)
         if source.get("kind") == "icloud_alert":
-            last = max([previous.get("last_alert_received_at", 0)]
+            last = max([previous.get("last_alert_received_at", 0),
+                        getattr(items, "last_alert_received_at", 0)]
                        + [j.get("evidence_received_at", 0) for j in items])
             source_state["last_alert_received_at"] = last
             source_state["first_alert_pending"] = not bool(last)
             if self.now() - (last or source.get("not_before", self.now())) > 72 * 3600:
-                source_state["status"] = "no_recent_alert"
-                self.errors.append("mail_not_received_72h:" + source["id"])
+                source_state["status"] = "partial" if source_warnings else "no_recent_alert"
+                # A healthy mailbox can contain no new matching alerts, including
+                # over weekends. Silence is a coverage warning, not a failed read.
+                self.warnings.append("mail_not_received_72h:" + source["id"])
         self.save(source_path, source_state)
 
     def source_failed(self, source_id, error):
@@ -138,6 +145,27 @@ class Engine:
         self.save(path, {**old, "status": "failed", "last_failure": self.now(),
                          "error_type": type(error).__name__})
         self.errors.append("source_failed:" + source_id)
+
+    def model_succeeded(self):
+        # Record each actual validated assessment immediately. A later provider
+        # failure in the same run must not erase this independent success signal.
+        self.save("control/model_service", {"last_success": self.now(),
+                  "first_failure": None, "retry_after": 0})
+
+    def model_failed(self, error, retry_after):
+        health = self.store.get("control/model_service") or {}
+        first_failure = health.get("first_failure")
+        if not first_failure:
+            # Older deployments stored only the most recent failure timestamp.
+            # Retain that available outage evidence when no success was recorded.
+            first_failure = (health.get("last_failure") if not health.get("last_success") else None) or self.now()
+        health.update(code=error.code, retryable=error.retryable,
+                      first_failure=first_failure, last_failure=self.now(),
+                      retry_after=retry_after)
+        self.save("control/model_service", health)
+        anchor = health.get("last_success") or first_failure
+        target = self.errors if not error.retryable or self.now() - anchor >= 24 * 3600 else self.warnings
+        target.append("model_service_failed:" + error.code)
 
     def deduplicate(self):
         """Keep source observations and delivery history; select one analysis target."""
@@ -187,7 +215,7 @@ class Engine:
         pending = alerts[:3] + [pair for pair in pending if pair[0] not in promoted]
         cooldown = self.store.get("control/model_service") or {}
         if cooldown.get("retry_after", 0) > self.now():
-            self.errors.append("model_service_cooldown:" + cooldown.get("code", "unknown"))
+            self.warnings.append("model_service_cooldown:" + cooldown.get("code", "unknown"))
             return
         for path, job in pending:
             if not self.time_left(95) or self.calls >= self.profile["model_calls_per_run_limit"]:
@@ -251,26 +279,28 @@ class Engine:
                     job.update(state="review_required" if assessment_exhausted(job) else "pending",
                                error=type(error).__name__, validation_error=str(error)[:300],
                                retry_after=self.now() + 86400)
-                    self.errors.append("assessment_failed:" + job["id"])
+                    # A rejected individual assessment is safely withheld. Only
+                    # expected validator ValueErrors are non-operational; JSON
+                    # decoding, runtime and unexpected exceptions remain errors.
+                    target = self.warnings if type(error) is ValueError else self.errors
+                    target.append("assessment_failed:" + job["id"])
                     self.save(path, job)
                     break
                 job.update(state="evaluated", assessment=result, assessed_key=job["cache_key"],
                            assessed_at=self.now(), usage=usage, error=None, model_http_status=None,
                            retry_after=0, validation_response=None, validation_error=None)
                 self.save(path, job)
+                self.model_succeeded()
                 provider_failure = None
                 break
             if provider_failure:
-                # Leave the remaining jobs untouched when the shared provider is
-                # unavailable. This still fails the run and keeps alerts active.
-                self.errors.append("model_service_failed:" + provider_failure.code)
-                self.save("control/model_service", {"code": provider_failure.code,
-                          "last_failure": self.now(), "retry_after": job["retry_after"]})
+                # Leave remaining jobs queued. An isolated retryable failure is
+                # a warning; an outage without actual AI success for 24 hours or
+                # a non-retryable service/configuration error remains a failure.
+                self.model_failed(provider_failure, job["retry_after"])
                 break
             if budget_stop:
                 break
-        if self.calls and not any(e.startswith("model_service_") for e in self.errors):
-            self.save("control/model_service", {"last_success": self.now(), "retry_after": 0})
 
     def eligible(self, job):
         if (job.get("closed") or job.get("duplicate_of") or job.get("delivery_hold")
@@ -337,14 +367,14 @@ class Engine:
 
     def status_line(self):
         stats = self.statistics()
-        return (f"状态：故障 {len(self.errors)}；待评估 {stats['backlog_count']}；"
+        return (f"状态：故障 {len(self.errors)}；提醒 {len(self.warnings)}；待评估 {stats['backlog_count']}；"
                 f"需人工核验 {stats['needs_review']}；本轮模型调用 {self.calls}")
 
     def add_reports(self):
         events = self.store.scan("notifications")
         unknown = sum(e["state"] == "unknown" for e in events.values())
         stats = self.statistics()
-        if self.errors or unknown or stats["backlog_count"] > 60 or stats["needs_review"]:
+        if self.errors or self.warnings or unknown or stats["backlog_count"] > 60 or stats["needs_review"]:
             self.enqueue(digest(["health", self.day()]), {"kind": "report", "priority": 5,
                          "text": "AI Job Radar 巡检\n" + self.status_line() +
                                  f"\n发送结果待核对：{unknown}。详情见云端运行记录。"})
@@ -489,7 +519,7 @@ class Engine:
             self.deliver()
             summary = {"status": "partial_failure" if self.errors else "success",
                        "started": started, "finished": self.now(), "run_id": self.owner,
-                       "errors": self.errors, **self.statistics()}
+                       "errors": self.errors, "warnings": self.warnings, **self.statistics()}
             self.save("runs/" + self.owner, summary)
             if not self.errors:
                 self.save("control/heartbeat", {"last_success": self.now(), "run_id": self.owner})

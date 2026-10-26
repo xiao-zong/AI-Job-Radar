@@ -94,7 +94,7 @@ class EngineTests(unittest.TestCase):
                 return value, usage
         self.model = InvalidModel()
         _, code = self.run_items(self.items[:1])
-        self.assertEqual(code, 1)
+        self.assertEqual(code, 0)
         saved = self.store.get("jobs/" + self.items[0]["id"])
         self.assertEqual(saved["validation_error"], "Claim has no matching source quotation.")
         self.assertIn("unsupported", saved["validation_response"]["requirements"][0]["quote"])
