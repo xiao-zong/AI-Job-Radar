@@ -89,7 +89,7 @@ Transient provider errors allow one short backoff retry; each attempt reserves q
 
 `control/model_service.last_success` records each actual validated AI assessment immediately, including when another request later fails in that run. A success clears the outage's `first_failure` anchor. Retryable failures are warnings while an actual successful assessment is less than 24 hours old; absent such a success, they escalate after 24 hours from the first recorded failure. If the last actual success is already 24 hours old, a new provider failure escalates immediately. For an older deployment migration, derive the latest actual success from stored `jobs.assessed_at`, rather than treating a completed scan as an AI success.
 
-The 26 October 2026 repair code is source revision `4d94daa78a35` and has 122 passing offline tests. This public code-backup record does not assert that the repair has been deployed or live-verified.
+The 26 October 2026 repair code is source revision `4d94daa78a35` and has 126 passing offline tests. This public code-backup record does not assert that the repair has been deployed or live-verified.
 
 For an unknown Telegram outcome, inspect the private channel and event identifier first. `scripts/reconcile_delivery.py` obtains the run lease and records a verified resolution; it never sends a message itself. Do not automatically resend an uncertain delivery.
 
@@ -97,7 +97,9 @@ Rollback by redeploying the previously accepted immutable image and compatible p
 
 ## Failure-email configuration
 
-The 26 October deployment replaces the repeating log-match failure policy with the `radar_actionable_failure` log-based counter. Its filter selects `severity>=ERROR` on the radar, acceptance and stop Cloud Run jobs. A metric-threshold condition sums this forward-only counter over 90,000 seconds (25 hours), groups by job name, and opens an incident above zero. The alert strategy uses `notificationPrompts=["OPENED"]` and has no `notificationChannelStrategy` / renotify interval. ERROR severity is set explicitly. Keep the former hourly log policy disabled after validating its replacement; retain independent missing-success monitoring. This groups daily repeats of one continuing fault rather than emailing for each matching log.
+The 26 October deployment replaces the repeating log-match failure policy with a recovery-aware PromQL condition. It compares the latest positive `radar_actionable_failure` event timestamp against the latest successful recovery for the same job, using a 25-hour history and one-minute subqueries. Main-job recovery uses `radar_success`, which excludes overlap skips; acceptance and stop jobs use their successful Cloud Run execution metric. A missing success cannot clear a failure, and a different job's success cannot clear this job. A later recovery clears the condition. The alert strategy uses `notificationPrompts=["OPENED"]`, has no renotify strategy, and sets ERROR severity explicitly. Keep the former hourly log policy disabled and retain independent missing-success monitoring.
+
+Known nonretryable or sustained AI failures remain operational failures during cooldown and quota-exhausted or empty-queue scans. They clear only after a validated model assessment, so a scan that merely defers work cannot falsely acknowledge recovery.
 
 ## Private backup responsibilities
 

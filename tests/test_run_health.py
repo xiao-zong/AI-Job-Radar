@@ -145,6 +145,71 @@ class RunHealthTests(unittest.TestCase):
         self.assertEqual(self.f.model.analyze.call_count, 1)
         self.sleep.assert_not_called()
 
+    def test_nonretryable_failure_stays_failed_during_cooldown(self):
+        self.failures(1, False, 'http_403')
+        first, code = self.f.run_items(self.f.items[:1])
+        self.assertEqual(code, 1)
+        self.assertEqual(first['errors'], ['model_service_failed:http_403'])
+        again, code = self.f.run_items(self.f.items[:1])
+        self.assertEqual((code, again['status']), (1, 'partial_failure'))
+        self.assertEqual(again['errors'], ['model_service_unresolved'])
+        self.assertIn('model_service_cooldown:http_403', again['warnings'])
+        self.assertEqual(again['model_calls_this_run'], 0)
+        self.assertEqual(self.f.model.analyze.call_count, 1)
+        self.assertIsNone(self.f.store.get('control/heartbeat'))
+
+    def test_sustained_outage_stays_failed_during_cooldown(self):
+        self.put_health({'last_success': self.f.timestamp - 25 * 3600, 'retry_after': 0})
+        self.failures()
+        first, code = self.f.run_items(self.f.items[:1])
+        self.assertEqual(code, 1)
+        self.assertEqual(first['errors'], ['model_service_failed:http_503'])
+        again, code = self.f.run_items(self.f.items[:1])
+        self.assertEqual(code, 1)
+        self.assertEqual(again['errors'], ['model_service_unresolved'])
+        self.assertEqual(again['model_calls_this_run'], 0)
+        self.assertEqual(self.f.model.analyze.call_count, 2)
+        self.assertIsNone(self.f.store.get('control/heartbeat'))
+
+    def test_expired_outage_is_not_cleared_by_quota_or_empty_queue(self):
+        for empty_queue in (False, True):
+            with self.subTest(empty_queue=empty_queue):
+                self.f = fixtures.EngineTests()
+                self.f.setUp()
+                health = {'code': 'http_503', 'retryable': True,
+                          'last_success': self.f.timestamp - 25 * 3600,
+                          'first_failure': self.f.timestamp - 25 * 3600,
+                          'retry_after': self.f.timestamp - 1}
+                self.put_health(health)
+                if not empty_queue:
+                    path = 'daily/2026-10-20'
+                    quota = {'model_calls': self.f.profile['model_calls_per_day_limit'], 'ordinary': 0}
+                    self.f.store.atomic([path], lambda values: values.update({path: quota}))
+                self.f.model.analyze = Mock()
+                result, code = self.f.run_items([] if empty_queue else self.f.items[:1])
+                self.assertEqual(code, 1)
+                self.assertEqual(result['errors'], ['model_service_unresolved'])
+                self.assertEqual(result['model_calls_this_run'], 0)
+                self.f.model.analyze.assert_not_called()
+                self.assertEqual(self.f.store.get('control/model_service'), health)
+                self.assertIsNone(self.f.store.get('control/heartbeat'))
+
+    def test_actual_later_success_clears_fatal_outage_without_stale_error(self):
+        self.failures(1, False, 'http_403')
+        _, code = self.f.run_items(self.f.items[:1])
+        self.assertEqual(code, 1)
+        self.f.timestamp += 86400
+        self.f.model.analyze = Mock(return_value=self.success())
+        result, code = self.f.run_items(self.f.items[:1])
+        self.assertEqual((code, result['status'], result['errors']), (0, 'success', []))
+        self.assertEqual(result['warnings'], [])
+        self.assertEqual(result['model_calls_this_run'], 1)
+        health = self.f.store.get('control/model_service')
+        self.assertEqual(health['last_success'], self.f.timestamp)
+        self.assertIsNone(health['first_failure'])
+        self.assertNotIn('code', health)
+        self.assertEqual(self.f.store.get('control/heartbeat')['last_success'], self.f.timestamp)
+
     def test_successful_empty_mail_read_is_stale_warning_not_failure(self):
         source = {'id': 'linkedin_email', 'kind': 'icloud_alert', 'enabled': True,
                   'not_before': self.f.timestamp - 4 * 86400}

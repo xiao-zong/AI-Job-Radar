@@ -6,7 +6,7 @@
   "runtime_source_revision": "5cb3d5537af6",
   "original_archive_sha256": "ab037ab8d811f5c7830eb14b8d7d8715fcd4373ae0a66b58eef513883918142c",
   "offline_tests": {
-    "passed": 122,
+    "passed": 126,
     "python": "3.15.1",
     "external_calls": false
   },
@@ -27,10 +27,10 @@
     ".dockerignore": "859b5db5d5bf6def5ea63a60a2a260056acbf64ff7d54ae485824ee8cfd9cb7c",
     ".gcloudignore": "a02ac0b2d2142997a0f9c8e9450f73b5784a812362cd31f234f5ebcbbd3a55d1",
     ".gitignore": "57e8db5478ffbf3ab8df78e2c9b762d0402f090650ae00d2bba0371cbcfc38e5",
-    "BACKUP.md": "62bc0e46828926a8ad09920676ad5efb1567e48803345e76cb7e47cbf192f4f2",
-    "DEPLOYMENT.md": "89c67f33f89a87380404bf7e85bdf253616d38d13efac07b5f5104d35dace9f7",
+    "BACKUP.md": "22409a59d071833710fc708f6be54a2728464e943418334d644764d28ea8c7ea",
+    "DEPLOYMENT.md": "7fa94ffb697463dfdd12d11b910d7ecee8a3fb8045e32d283bcf11986efc80bb",
     "Dockerfile": "f2462aba8492a6a1c59042b3743255736f71c8854e15d73db2ebae6d987f575e",
-    "README.md": "f858a7a444c098c41625801f03318d150a6fa25f31cb07988ef2b6287eb798ac",
+    "README.md": "33addc1df7c905f7c93e7676646d776f8730305219cc83df1dfd097c5529002d",
     "cloudbuild.yaml": "4bbdbe43093a3780bd6b962d1584d9dd3748c60e0a5ced34de8f453d8216dd35",
     "config/assessment.schema.json": "04a89dd02cc9de9b05694f67f7d0cda2d944b42e68939102ff072ae4915e5107",
     "config/deployment.example.json": "8e4e5e556000f509826da528e27b3e2ff52ce746e284b745cd3a828b52c206e1",
@@ -39,7 +39,7 @@
     "radar/__init__.py": "b0b8ced8ae54558071e4690644483528188dca853280f51773bde880608b63ec",
     "radar/acceptance.py": "84b8e5887156b5dfee170955f99b134ead10f860a94de47a5745229c56a2805e",
     "radar/domain.py": "bd197920dd37420841c0fcd442154d9f72eeb4085b1633abc2a1d1b0b0c15855",
-    "radar/engine.py": "4787d0d8f710530f83aefaa942dbca4053050bfb0363e2840ada47fd638ab6d5",
+    "radar/engine.py": "4692e62cb84bd9e94c5a81c85b86648b89f3ef193397acc54f72f859b3d6dde9",
     "radar/icloud_reader.py": "c830908d667bf6d658d5ff6ebe7fc22d5e43121e9b37180e33221db69c2554ab",
     "radar/identity.py": "09ed1ec394a2f82f1746178865b00967b8d2f48f403c2edefc9e1937ba04bd1c",
     "radar/mail_import.py": "66a4e53c7acae51b9c7fb27baefcbdcc300b5347d8a2166212a6bbaa8869f56b",
@@ -70,10 +70,12 @@
     "tests/test_mail_sources.py": "5cf07c3bee974d956de615877f9c196c14405856eafbeec745775e27052cb02d",
     "tests/test_provider_recovery.py": "24885a7db6c97d94378f65275de4d1270cda631b5046d5a8bbb31c9e93873436",
     "tests/test_resilience.py": "df6a199e630115a3928363936fec970f6fc0b9a738d3d7fe96265dac3c808a02",
-    "tests/test_run_health.py": "1c1de694b9b445ee8712989d6dfbba5d05ccf5b23987e41986cb581b0a641b7c",
+    "tests/test_run_health.py": "3f29874715ffac445b59a6f412874e5b845f8640ab52b409e6c33e99570951c2",
     "tests/test_shutdown.py": "94c824eb51fdf1dd8dc83869413c9d4de952620cb03e34cacb35a9079503e0f3",
     "tests/test_sources.py": "2daaeb6c70456ee02d9acb1b3383d86f713050f0eb03e1755173559d47790422"
   },
   "latest_backup_date": "2026-10-26",
-  "incremental_runtime_revision": "4d94daa78a35"
+  "incremental_runtime_revision": "4d94daa78a35",
+  "recovery_guard_sha256": "4692e62cb84bd9e94c5a81c85b86648b89f3ef193397acc54f72f859b3d6dde9",
+  "additional_guard_cloud_release": "pending final deployment record"
 }

@@ -23,7 +23,7 @@ This is a source backup with generic configuration templates, not a complete pri
 
 ## Validation record
 
-All 122 offline tests passed on 26 October 2026 after the public snapshot's incremental code and placeholder/template checks (Python 3.15.1). The test suite covers parsing, deduplication, evidence checks, quotas, provider backoff/cooldown, persistent mail-card reuse, resumable coverage, operational warning classification, outage escalation and Telegram delivery reconciliation. No cloud, mailbox, model or Telegram calls are needed for the unit tests.
+All 126 offline tests passed on 26 October 2026 after the public snapshot's incremental code and placeholder/template checks (Python 3.15.1). The test suite covers parsing, deduplication, evidence checks, quotas, provider backoff/cooldown, persistent mail-card reuse, resumable coverage, operational warning classification, outage escalation and Telegram delivery reconciliation. No cloud, mailbox, model or Telegram calls are needed for the unit tests.
 
 The original 21 October deployment validation checked source ingestion and queued failures without a new model call because the daily allowance was exhausted. The 26 October record above covers code and offline validation only; consult the private deployment record for subsequent live acceptance results.
 
@@ -32,3 +32,5 @@ The original 21 October deployment validation checked source ingestion and queue
 Future cloud edits are not synchronized automatically. Export the latest committed source into a separate review directory, apply the same redactions, add only public configuration templates, run tests and inspect the full staged diff before pushing. Never connect the private cloud working tree directly to the public remote or push its history wholesale. Do not add GitHub workflows or credentials unless deliberately changing this storage-only setup.
 
 `BACKUP_MANIFEST.json` records SHA-256 hashes for all public content files other than itself. Update it when making a new reviewed snapshot.
+
+The additional recovery guard keeps confirmed fatal AI outages active across cooldown and no-call scans. The alert configuration now clears after a later successful recovery; historical query checks distinguish failure, recovery, missing success and a different job's success.

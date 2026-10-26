@@ -167,6 +167,17 @@ class Engine:
         target = self.errors if not error.retryable or self.now() - anchor >= 24 * 3600 else self.warnings
         target.append("model_service_failed:" + error.code)
 
+    def preserve_model_failure(self):
+        # Deferring work is not proof that a previously fatal outage recovered.
+        # Inspect the final state so a validated success in this run can clear it.
+        health = self.store.get("control/model_service") or {}
+        if not health.get("code"):
+            return
+        anchor = health.get("last_success") or health.get("first_failure") or health.get("last_failure")
+        fatal = health.get("retryable") is False or bool(anchor and self.now() - anchor >= 24 * 3600)
+        if fatal and not any(error.startswith("model_service_") for error in self.errors):
+            self.errors.append("model_service_unresolved")
+
     def deduplicate(self):
         """Keep source observations and delivery history; select one analysis target."""
         events = list(self.store.scan("notifications").values())
@@ -216,6 +227,7 @@ class Engine:
         cooldown = self.store.get("control/model_service") or {}
         if cooldown.get("retry_after", 0) > self.now():
             self.warnings.append("model_service_cooldown:" + cooldown.get("code", "unknown"))
+            self.preserve_model_failure()
             return
         for path, job in pending:
             if not self.time_left(95) or self.calls >= self.profile["model_calls_per_run_limit"]:
@@ -301,6 +313,7 @@ class Engine:
                 break
             if budget_stop:
                 break
+        self.preserve_model_failure()
 
     def eligible(self, job):
         if (job.get("closed") or job.get("duplicate_of") or job.get("delivery_hold")
