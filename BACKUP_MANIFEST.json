@@ -27,10 +27,10 @@
     ".dockerignore": "859b5db5d5bf6def5ea63a60a2a260056acbf64ff7d54ae485824ee8cfd9cb7c",
     ".gcloudignore": "a02ac0b2d2142997a0f9c8e9450f73b5784a812362cd31f234f5ebcbbd3a55d1",
     ".gitignore": "57e8db5478ffbf3ab8df78e2c9b762d0402f090650ae00d2bba0371cbcfc38e5",
-    "BACKUP.md": "22409a59d071833710fc708f6be54a2728464e943418334d644764d28ea8c7ea",
-    "DEPLOYMENT.md": "7fa94ffb697463dfdd12d11b910d7ecee8a3fb8045e32d283bcf11986efc80bb",
+    "BACKUP.md": "7e4a21d1ab6ac8219ac421cbea2bcd08d7cb0575dc99178eaf1ee202f6705091",
+    "DEPLOYMENT.md": "385d46807999af281dd31ec6879e9d892c66c1635f9fcc5200b3f00519ce924b",
     "Dockerfile": "f2462aba8492a6a1c59042b3743255736f71c8854e15d73db2ebae6d987f575e",
-    "README.md": "33addc1df7c905f7c93e7676646d776f8730305219cc83df1dfd097c5529002d",
+    "README.md": "4ffe6c4cfd0255c9f588f9a3aaa39a40b8d165bcb43f35fc82293d14c90b7dbf",
     "cloudbuild.yaml": "4bbdbe43093a3780bd6b962d1584d9dd3748c60e0a5ced34de8f453d8216dd35",
     "config/assessment.schema.json": "04a89dd02cc9de9b05694f67f7d0cda2d944b42e68939102ff072ae4915e5107",
     "config/deployment.example.json": "8e4e5e556000f509826da528e27b3e2ff52ce746e284b745cd3a828b52c206e1",
@@ -75,7 +75,30 @@
     "tests/test_sources.py": "2daaeb6c70456ee02d9acb1b3383d86f713050f0eb03e1755173559d47790422"
   },
   "latest_backup_date": "2026-10-26",
-  "incremental_runtime_revision": "4d94daa78a35",
+  "incremental_runtime_revision": "88a906f06af2",
   "recovery_guard_sha256": "4692e62cb84bd9e94c5a81c85b86648b89f3ef193397acc54f72f859b3d6dde9",
-  "additional_guard_cloud_release": "pending final deployment record"
+  "additional_guard_cloud_release": "88a906f06af2",
+  "base_repair_runtime_revision": "4d94daa78a35",
+  "final_guard_live_verification": {
+    "runtime_revision": "88a906f06af2",
+    "completed_local": "2026-10-26 13:19:40 Australia/Melbourne",
+    "status": "success",
+    "operational_errors": 0,
+    "model_calls": 0,
+    "scope": "Deployment, source intake, quota and health-state verification; daily allowance was exhausted"
+  },
+  "base_repair_live_verification": {
+    "runtime_revision": "4d94daa78a35",
+    "completed_local": "2026-10-26T11:47:26+11:00",
+    "timezone": "Australia/Melbourne",
+    "model_attempts": 10,
+    "operational_errors": 0,
+    "predates_final_guard": true
+  },
+  "recovery_alert_query_api_checks_passed": 7,
+  "alert_rule_verification": {
+    "checks_passed": 7,
+    "current_condition": "clear",
+    "recovery_aware": true
+  }
 }
